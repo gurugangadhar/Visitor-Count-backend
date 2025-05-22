@@ -21,13 +21,23 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 
+
 // MongoDB Connection
+
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 30000,
+  connectTimeoutMS: 10000,
+  maxPoolSize: 10,
+  retryWrites: true,
+  w: 'majority'
 })
 .then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit process if can't connect
+});
+
 
 // Visitor Schema
 const visitorSchema = new mongoose.Schema({
