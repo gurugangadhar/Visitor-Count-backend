@@ -1,21 +1,20 @@
 {
-  "name": "visitor-counter",
+  "name": "visitor-counter-backend",
   "version": "1.0.0",
-  "description": "Visitor counter application",
+  "description": "Backend for visitor counter application",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "server": "nodemon server.js",
-    "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm install --prefix client && npm run build --prefix client"
+    "dev": "nodemon server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "mongoose": "^8.15.0"
   },
   "devDependencies": {
-    "concurrently": "^8.2.1",
     "nodemon": "^3.0.2"
   }
 }

@@ -1,50 +1,91 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const fs = require('fs');
+const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: ['http://localhost:5174', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
-// Database file path
-const DB_PATH = path.join(__dirname, 'visitors.json');
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 30000,
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
 
-// Initialize visitor count
-const initializeVisitorCount = () => {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ count: 0 }));
+// Visitor Schema
+const visitorSchema = new mongoose.Schema({
+  count: { type: Number, default: 0 },
+  lastUpdated: { type: Date, default: Date.now }
+}, { collection: 'visitors' });
+
+const Visitor = mongoose.model('Visitor', visitorSchema);
+
+// Initialize visitor document
+const initializeVisitor = async () => {
+  try {
+    await Visitor.findOneAndUpdate(
+      {},
+      { $setOnInsert: { count: 0 } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error('Initialization error:', err);
   }
 };
 
-// Get visitor count
-app.get('/api/visitors', (req, res) => {
-  initializeVisitorCount();
-  const data = JSON.parse(fs.readFileSync(DB_PATH));
-  res.json({ count: data.count });
+// Atomic increment function
+const incrementCount = async () => {
+  const result = await Visitor.findOneAndUpdate(
+    {},
+    { $inc: { count: 1 } },
+    { new: true, upsert: true }
+  );
+  return result.count;
+};
+
+// Routes
+app.get('/api/visitors', async (req, res) => {
+  try {
+    const visitor = await Visitor.findOne();
+    res.json({ 
+      count: visitor?.count || 0,
+      isNewVisitor: false // Always false for GET requests
+    });
+  } catch (error) {
+    console.error('GET Error:', error);
+    res.status(500).json({ error: 'Failed to fetch count', count: 0 });
+  }
 });
 
-// Increment visitor count
-app.post('/api/visitors', (req, res) => {
-  initializeVisitorCount();
-  const data = JSON.parse(fs.readFileSync(DB_PATH));
-  data.count += 1;
-  fs.writeFileSync(DB_PATH, JSON.stringify(data));
-  res.json({ count: data.count });
+app.post('/api/visitors', async (req, res) => {
+  try {
+    const count = await incrementCount();
+    res.json({ 
+      count,
+      isNewVisitor: true 
+    });
+  } catch (error) {
+    console.error('POST Error:', error);
+    res.status(500).json({ error: 'Failed to increment count', count: 0 });
+  }
 });
 
-// Serve static files (for production)
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/build')));
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-  });
-}
+// Initialize on startup
+initializeVisitor();
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
