@@ -8,7 +8,11 @@ const PORT = process.env.PORT || 5000;
 
 // Enhanced CORS configuration
 const corsOptions = {
-  origin: ['http://localhost:5174', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5174', 
+    'http://localhost:3000',
+    'https://your-frontend-domain.com' // Add your frontend domain here
+  ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
