@@ -13,7 +13,9 @@ const corsOptions = {
     'http://localhost:5173',
     'http://localhost:3000',
     'https://your-frontend-domain.com', // Add your frontend domain here
-    'https://21ak1a0427.github.io/Testing1'
+    'https://21ak1a0427.github.io',
+    'https://visitor-count-backend-1.onrender.com'
+
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
