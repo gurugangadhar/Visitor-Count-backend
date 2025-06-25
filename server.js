@@ -13,8 +13,8 @@ const corsOptions = {
     'http://localhost:5173',
     'http://localhost:3000',
     'https://your-frontend-domain.com', // Add your frontend domain here
-    'https://21ak1a0427.github.io',
-    'https://visitor-count-backend-1.onrender.com'
+    'https://visitor-count-backend-1.onrender.com',
+    'https://gurugangadhar.github.io'
 
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
