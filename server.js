@@ -15,7 +15,10 @@ const corsOptions = {
     'https://your-frontend-domain.com', // Add your frontend domain here
     'https://visitor-count-backend-1.onrender.com',
     'https://gurugangadhar.github.io',
-    'https://gurugangadhar.github.io/tk2k25/'
+    'https://gurugangadhar.github.io/tk2k25/',
+    'http://localhost:5173/tk2k25/#/',
+    'http://localhost:5173/tk2k25/'
+    
     
 
   ],
