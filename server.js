@@ -6,16 +6,20 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- CORS Configuration ---
+// Enhanced CORS configuration
 const corsOptions = {
   origin: [
+    'http://localhost:5174', 
     'http://localhost:5173',
-    'http://localhost:5174',
     'http://localhost:3000',
-    'https://gurugangadhar.github.io',
-    'https://gurugangadhar.github.io/tk2k25/',
+    'https://your-frontend-domain.com', // Add your frontend domain here
     'https://visitor-count-backend.onrender.com',
-    'https://your-frontend-domain.com'
+    'https://gurugangadhar.github.io',
+    'https://gurugangadhar.github.io/tk2k25/'
+    
+    
+    
+
   ],
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
@@ -25,7 +29,9 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json());
 
-// --- MongoDB Connection ---
+
+// MongoDB Connection
+
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 30000,
@@ -34,68 +40,74 @@ mongoose.connect(process.env.MONGO_URI, {
   retryWrites: true,
   w: 'majority'
 })
-.then(() => console.log('✅ MongoDB connected'))
+.then(() => console.log('MongoDB connected successfully'))
 .catch(err => {
-  console.error('❌ MongoDB connection error:', err);
-  process.exit(1);
+  console.error('MongoDB connection error:', err);
+  process.exit(1); // Exit process if can't connect
 });
 
-// --- Visitor Schema (Per Page) ---
+
+// Visitor Schema
 const visitorSchema = new mongoose.Schema({
-  page: { type: String, required: true, unique: true },
   count: { type: Number, default: 0 },
   lastUpdated: { type: Date, default: Date.now }
-}, { collection: 'visitors_by_page' });
+}, { collection: 'visitors' });
 
 const Visitor = mongoose.model('Visitor', visitorSchema);
 
-// --- Increment Visitor Count ---
-const incrementPageCount = async (page) => {
+// Initialize visitor document
+const initializeVisitor = async () => {
+  try {
+    await Visitor.findOneAndUpdate(
+      {},
+      { $setOnInsert: { count: 0 } },
+      { upsert: true }
+    );
+  } catch (err) {
+    console.error('Initialization error:', err);
+  }
+};
+
+// Atomic increment function
+const incrementCount = async () => {
   const result = await Visitor.findOneAndUpdate(
-    { page },
-    { $inc: { count: 1 }, $set: { lastUpdated: new Date() } },
+    {},
+    { $inc: { count: 1 } },
     { new: true, upsert: true }
   );
   return result.count;
 };
 
-// --- Get Visitor Count ---
-const getPageCount = async (page) => {
-  const result = await Visitor.findOne({ page });
-  return result?.count || 0;
-};
-
-// --- Routes ---
-
-// GET count for a page
+// Routes
 app.get('/api/visitors', async (req, res) => {
-  const page = req.query.page;
-  if (!page) return res.status(400).json({ error: 'Page parameter is required' });
-
   try {
-    const count = await getPageCount(page);
-    res.json({ page, count, isNewVisitor: false });
+    const visitor = await Visitor.findOne();
+    res.json({ 
+      count: visitor?.count || 0,
+      isNewVisitor: false // Always false for GET requests
+    });
   } catch (error) {
     console.error('GET Error:', error);
     res.status(500).json({ error: 'Failed to fetch count', count: 0 });
   }
 });
 
-// POST increment count for a page
 app.post('/api/visitors', async (req, res) => {
-  const page = req.body.page;
-  if (!page) return res.status(400).json({ error: 'Page parameter is required in body' });
-
   try {
-    const count = await incrementPageCount(page);
-    res.json({ page, count, isNewVisitor: true });
+    const count = await incrementCount();
+    res.json({ 
+      count,
+      isNewVisitor: true 
+    });
   } catch (error) {
     console.error('POST Error:', error);
     res.status(500).json({ error: 'Failed to increment count', count: 0 });
   }
 });
 
-// --- Start Server ---
+// Initialize on startup
+initializeVisitor();
+
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
