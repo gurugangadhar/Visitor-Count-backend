@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- CORS Setup ---
+// --- CORS Configuration ---
 const corsOptions = {
   origin: [
     'http://localhost:5173',
@@ -40,7 +40,7 @@ mongoose.connect(process.env.MONGO_URI, {
   process.exit(1);
 });
 
-// --- Schema: Visitor per Page ---
+// --- Visitor Schema (Per Page) ---
 const visitorSchema = new mongoose.Schema({
   page: { type: String, required: true, unique: true },
   count: { type: Number, default: 0 },
@@ -49,7 +49,7 @@ const visitorSchema = new mongoose.Schema({
 
 const Visitor = mongoose.model('Visitor', visitorSchema);
 
-// --- Increment Visitor Count for Page ---
+// --- Increment Visitor Count ---
 const incrementPageCount = async (page) => {
   const result = await Visitor.findOneAndUpdate(
     { page },
@@ -59,15 +59,15 @@ const incrementPageCount = async (page) => {
   return result.count;
 };
 
-// --- Get Count for Page ---
+// --- Get Visitor Count ---
 const getPageCount = async (page) => {
   const result = await Visitor.findOne({ page });
   return result?.count || 0;
 };
 
-// --- API Routes ---
+// --- Routes ---
 
-// GET count for specific page
+// GET count for a page
 app.get('/api/visitors', async (req, res) => {
   const page = req.query.page;
   if (!page) return res.status(400).json({ error: 'Page parameter is required' });
@@ -81,7 +81,7 @@ app.get('/api/visitors', async (req, res) => {
   }
 });
 
-// POST: increment count for page
+// POST increment count for a page
 app.post('/api/visitors', async (req, res) => {
   const page = req.body.page;
   if (!page) return res.status(400).json({ error: 'Page parameter is required in body' });
